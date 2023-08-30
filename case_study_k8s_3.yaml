@@ -1,0 +1,182 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+   name: registry-deployment
+spec:
+   replicas: 1
+   selector:
+      matchLabels:
+         app: regapp
+   template:
+      metadata:
+         name: registry-pod
+         labels:
+            app: regapp
+      spec:
+         containers:
+            - name: reg-container
+              image: dockerhub/sunbird-rc-core:v0.0.14
+              volumeMounts:
+                 - name: reg-vol-1
+                   mountPath: /home/sunbirdrc/config/public/_schemas
+                 - name: reg-vol-2
+                   mountPath: /home/sunbirdrc/config/views/
+              env:
+                 - name: connectionInfo_uri
+                   value: "jdbc:postgresql://db-service:5432/registry"
+                 - name: connectionInfo_username
+                   valueFrom:
+                     secretKeyRef:
+                       name: registry-secret
+                       key: admin1   
+                  #  value: postgres
+                 - name: connectionInfo_password
+                   valueFrom:
+                     secretKeyRef:
+                       name: registry-secret
+                       key: password1
+                  #  value: postgres
+                 - name: event_enabled
+                   value: "true"
+                 - name: event_topic
+                   value: events
+                 - name: event_providerName
+                   value: "dev.sunbirdrc.registry.service.impl.KafkaEventService"
+                 - name: elastic_search_connection_url
+                   value: "es-service:9200"
+                 - name: elastic_search_scheme
+                   value: "http"
+                 - name: elastic_search_auth_enabled
+                   value: "false"
+                 - name: elastic_search_username
+                   valueFrom:
+                     secretKeyRef:
+                       name: registry-secret
+                       key: admin2
+                  #  value: "elastic"
+                 - name: elastic_search_password
+                   valueFrom:
+                     secretKeyRef:
+                       name: registry-secret
+                       key: password2
+                  #  value: "elastic"
+                 - name: search_providerName
+                   value: "${SEARCH_PROVIDER_NAME-dev.sunbirdrc.registry.service.ElasticSearchService}"
+                 - name: sunbird_sso_realm
+                   value: "sunbird-rc"
+                 - name: sunbird_sso_url
+                   value: "http://keycloak:8080/auth"
+                 - name: sunbird_sso_admin_client_id
+                   value: "admin-api"
+                 - name: sunbird_sso_client_id
+                   value: "registry-frontend"
+                 - name: sunbird_sso_admin_client_secret
+                   value: "${KEYCLOAK_SECRET}"
+                 - name: claims_url
+                   value: "http://claim-ms:8082"
+                 - name: sign_url
+                   value: "http://csigner-service:8079/sign"
+                 - name: verify_url
+                   value: "http://csigner-service:8079/verify"
+                 - name: sign_health_check_url
+                   value: "http://csigner-service:8079/health"
+                 - name: signature_enabled
+                   value: "true"
+                 - name: pdf_url
+                   value: "http://ca-serice:8078/api/v1/certificatePDF"
+                 - name: certificate_health_check_url
+                   value: "http://ca-service:8078/health"
+                 - name: template_base_url
+                   value: "http://registry:8081/api/v1/templates/"
+                 - name: sunbird_keycloak_user_set_password
+                   value: "true"
+                 - name: filestorage_connection_url
+                   value: "http://file-storage:9000"
+                 - name: filestorage_access_key
+                   valueFrom:
+                     secretKeyRef:
+                       name: registry-secret
+                       key: admin3
+                  #  value: admin
+                 - name: filestorage_secret_key
+                   valueFrom:
+                     secretKeyRef:
+                       name: registry-secret
+                       key: password3 
+                  #  value: "12345678"
+                 - name: filestorage_bucket_key
+                   value: issuance
+                 - name: registry_base_apis_enable
+                   value: "false"
+                 - name: sunbird_keycloak_user_password
+                   value: "abcd@123"
+                 - name: logging.level.root
+                   value: INFO
+                 - name: enable_external_templates
+                   value: "true"
+                 - name: async_enabled
+                   value: "false"
+                 - name: authentication_enabled
+                   value: "true"
+                 - name: kafka_bootstrap_address
+                   value: "kafka-service:9092"
+                 - name: webhook_enabled
+                   value: "false"
+                 - name: webhook_url
+                   value: "http://localhost:5001/api/v1/callback"
+                 - name: redis_host
+                   value: redis
+                 - name: redis_port
+                   value: "6379"
+                 - name: manager_type
+                   value: "DefinitionsManager"
+                 - name: notification_async_enabled
+                   value: "false"
+                 - name: notification_enabled
+                   value: "false"
+                 - name: notification_url
+                   value: "http://nd-service:8765/notification-service/v1/notification}"
+#              livenessProbe:
+ #                exec:
+  #                  command:
+   #                    - wget -nv -t1 --spider http://localhost:8081/health || exit 1
+    #             periodSeconds: 30
+      #           timeoutSeconds: 10
+     #            failureThreshold: 10
+#         initContainers:
+ #           - name: es
+  #            image: docker.elastic.co/elasticsearch/elasticsearch:8.8.1
+   #         - name: db
+    #          image: postgres
+         volumes:
+            - name: reg-vol-1
+              hostPath:
+                 path: /home/ubuntu/sunbird-rc-core/java/registry/src/main/resources/public/_schemas
+            - name: reg-vol-2
+              hostPath:
+                 path: /home/ubuntu/sunbird-rc-core/java/registry/src/main/resources/views
+---
+apiVersion: v1
+kind: Service
+metadata:
+   name: registry
+spec:
+   selector:
+      app: regapp
+   ports:
+      - port: 8081
+        targetPort: 8081
+        name: "8081"
+---
+apiVersion: v1 
+kind: Secret 
+metadata:
+  name: registry-secret
+type: Opaque
+data: 
+  admin1: "cG9zdGdyZXM="
+  password1: "cG9zdGdyZXM="
+  admin2: "ZWxhc3RpYw=="
+  password2: "ZWxhc3RpYw=="
+  admin3: "YWRtaW4=" 
+  password3: "MTIzNDU2Nzg="

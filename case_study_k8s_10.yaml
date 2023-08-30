@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zookeeper-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zoo-app
+  template:
+    metadata:
+      name: zoo-pod
+      labels:
+        app: zoo-app
+    spec:
+      containers:
+        - name: zookeper-container
+          image: confluentinc/cp-zookeeper:latest
+          env:
+            - name: ZOOKEEPER_CLIENT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: zoo-config
+                  key: ZOOKEEPER_CLIENT_PORT
+            - name: ZOOKEEPER_TICK_TIME
+              value: "2000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-service
+spec:
+  selector:
+    app: zoo-app
+  ports:
+    - name: "2181"
+      port: 2181
+      targetPort: 2181
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zoo-config
+data:
+  ZOOKEEPER_CLIENT_PORT: "2181"

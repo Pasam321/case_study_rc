@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics-app
+  template:
+    metadata:
+      name: metrics-pod
+      labels:
+        app: metrics-app
+    spec:
+      containers:
+        - name: metrics-container
+          image: dockerhub/sunbird-rc-metrics
+          env:
+            - name: CLICK_HOUSE_URL
+              value: "ch-service:9000"
+            - name: CLICKHOUSE_DATABASE
+              value: default
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: config-metrics
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: KAFKA_METRICS_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: config-metrics
+                  key: KAFKA_METRICS_TOPIC
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: config-metrics
+                  key: REDIS_URL
+ #     initContainers:
+  #      - name: kafka
+  #        image: confluentinc/cp-kafka:latest
+  #      - name: registry
+  #        image: dockerhub/sunbird-rc-core:${RELEASE_VERSION}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-server
+spec:
+  selector:
+    app: metrics-app
+  ports:
+    - name: "8070"
+      port: 8070
+      targetPort: 8070
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-metrics
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
+  KAFKA_METRICS_TOPIC: events
+  REDIS_URL: "redis-service:6379"

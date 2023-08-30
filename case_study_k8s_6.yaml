@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-singer-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csinger-app
+  template:
+    metadata:
+      name: csinger-pod
+      labels:
+        app: csinger-app
+    spec:
+      containers:
+        - name: csinger-container
+          image: dockerhub/sunbird-rc-certificate-signer:v0.0.14
+          volumeMounts:
+            - name: csinger-vol
+              mountPath: /etc/signer
+          env:
+            - name: PORT
+              value: "8079"
+            - name: TIME_ZONE
+              value: Asia/Kolkata
+#          livenessProbe:
+ #           exec:
+  #            command:
+   #             - curl -f http://localhost:8079/health || exit 1
+    #        periodSeconds: 30
+     #       timeoutSeconds: 10
+      #      failureThreshold: 10
+
+      volumes:
+        - name: csinger-vol
+          hostPath:
+            path: /home/ubuntu/imports
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: csinger-service
+spec:
+  selector:
+    app: csinger-app
+  ports:
+    - name: "8079"
+      port: 8079
+      targetPort: 8079

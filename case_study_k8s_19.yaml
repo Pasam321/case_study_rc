@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: clickhouse-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ch-app
+  template:
+    metadata:
+      name: ch-pod
+      labels: 
+        app: ch-app
+    spec: 
+      containers:
+        - name: ch-container
+          image: clickhouse/clickhouse-server:23.4.2.11-alpine
+#          livenessProbe:
+ #           exec:
+  #            command:  
+   #             - wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+
+--- 
+apiVersion: v1 
+kind: Service 
+metadata: 
+  name: ch-service 
+spec: 
+  selector:
+    app: ch-app  
+  ports:
+    - name: "9000" 
+      port: 9000 
+      targetPort: 9000 
+      

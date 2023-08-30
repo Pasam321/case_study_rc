@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: public-key-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pks-app
+  template:
+    metadata:
+      name: pks-pod
+      labels:
+        app: pks-app
+    spec:
+      containers:
+        - name: pks-container
+          image: dockerhub/sunbird-rc-public-key-service
+          env:
+            - name: CONFIG_BASE_PATH
+              value: /etc/keys
+          volumeMounts:
+            - name: pks-vol
+              mountPath: /etc/keys
+#          livenessProbe:
+#            exec:
+ #             command:
+  #              - curl -f localhost:3300/public-key-service/api/v1/health
+   #         periodSeconds: 30
+    #        timeoutSeconds: 10
+     #       failureThreshold: 10
+      volumes:
+        - name: pks-vol
+          hostPath:
+            path: /home/ubuntu/imports/
+#          persistentVolumeClaim:
+ #           claimName: pks-pvc-vol
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: public-key-service
+spec:
+  selector:
+    app: pks-app
+  ports:
+    - name: "3300"
+      port: 3300
+      targetPort: 3300
+---
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: pks-per-vol
+# spec:
+#   capacity:
+#     storage: 500Mi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteOnce  
+#   storageClassName: local-storage
+#   local:
+#     path: /home/ubuntu/imports/
+#   nodeAffinity:
+#     required:
+#       nodeSelectorTerms:
+#       - matchExpressions:
+#         - key: kubernetes.io/hostname
+#           operator: In
+#           values:
+#           - ip-172.18.0.2
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: pks-pvc-vol
+# spec:
+#   volumeName: pks-per-vol
+#   storageClassName: local-storage
+#   accessModes:
+#     - ReadWriteOnce 
+#   volumeMode: Filesystem
+#   resources:
+#     requests:
+#       storage: 500Mi

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claim-ms-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: claim-app
+  template:
+    metadata:
+      name: claim-pod
+      labels:
+        app: claim-app
+    spec:
+      containers:
+        - name: claim-containers
+          image: dockerhub/sunbird-rc-claim-ms:v0.0.14
+          env:
+            - name: connectionInfo_uri
+              value: jdbc:postgresql://db-service:5432/registry
+            - name: connectionInfo_username
+              value: postgres
+            - name: connectionInfo_password
+              value: postgres
+            - name: sunbirdrc_url
+              value: http://registry:8081
+#          livenessProbe:
+ #           exec:
+  #            command:
+   #             - wget -nv -t1 --spider http://localhost:8082/health || exit 1
+    #        periodSeconds: 30
+     #       timeoutSeconds: 10
+      #      failureThreshold: 10
+      #initContainers:
+       # - name: db
+        #  image: postgres
+       # - name: registry
+        #  image: dockerhub/sunbird-rc-core:v0.0.14
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: claim-ms
+spec:
+  selector:
+    app: claim-app
+  ports:
+    - name: claim-port
+      port: 8082
+      targetPort: 8082

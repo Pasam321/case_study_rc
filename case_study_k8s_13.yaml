@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: content-proxy-services-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cps-app
+  template:
+    metadata:
+      name: cps-pod
+      labels:
+        app: cps-app
+    spec:
+      containers:
+        - name: cps-container
+          image: dockerhub/sunbird-rc-context-proxy-service
+#          livenessProbe:
+ #           exec:
+  #            command:
+   #             - curl -f localhost:4400/health
+    #        periodSeconds: 30
+     #       timeoutSeconds: 10
+      #      failureThreshold: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: context-proxy-service
+spec:
+  selector:
+    app: cps-app
+  ports:
+    - name: "4400"
+      targetPort: 4400
+      port: 4400

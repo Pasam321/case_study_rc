@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bulk-issuance-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bi-app
+  template:
+    metadata:
+      name: bi-pod
+      labels:
+        app: bi-app
+    spec:
+      containers:
+        - name: bi-container
+          image: dockerhub/sunbird-rc-bulk-issuance
+          env:
+            - name: REGISTRY_BASE_URL
+              value: http://registry-service:8081/
+            - name: DATABASE_HOST
+              value: db-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bi-service
+spec:
+  selector:
+    app: bi-app
+  ports:
+    - name: "5665"
+      port: 5665
+      targetPort: 5665

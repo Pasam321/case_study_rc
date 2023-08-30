@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-nd
+  template:
+    metadata:
+      name: nd-pod
+      labels:
+        app: my-nd
+    spec:
+      containers:
+        - name: nd-image
+          image: dockerhub/sunbird-rc-notification-service:v0.0.14
+#          livenessProbe:
+ #           exec:
+  #            command:
+   #             - wget -nv -t1 --spider http://localhost:8765/notification-service/v1/health || exit 1
+    #        periodSeconds: 30
+     #       timeoutSeconds: 10
+      #      failureThreshold: 10
+          env:
+            - name: TRACK_NOTIFICATIONS
+              valueFrom:
+                configMapKeyRef:
+                  name: nd-configmap
+                  key: TRACK_NOTIFICATIONS
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: nd-configmap
+                  key: KAFKA_BOOTSTRAP_SERVERS
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nd-service
+spec:
+  selector:
+    app: my-nd
+  ports:
+    - name: "8765"
+      port: 8765
+      targetPort: 8765
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nd-configmap
+data:
+  TRACK_NOTIFICATIONS: "false"
+  KAFKA_BOOTSTRAP_SERVERS: kafka:9092

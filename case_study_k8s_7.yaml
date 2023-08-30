@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: certi-api-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ca-app
+  template:
+    metadata:
+      name: ca-pod
+      labels:
+        app: ca-app
+    spec:
+      containers:
+        - name: ca-contianer
+          image: dockerhub/sunbird-rc-certificate-api:v0.0.14
+          env:
+            - name: PORT
+              value: "8078"
+#          livenessProbe:
+ #           exec:
+  #            command:
+   #             - "wget -nv -t1 --spider http://localhost:8078/health || exit 1"
+    #        periodSeconds: 30
+     #       timeoutSeconds: 10
+      #      failureThreshold: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ca-service
+spec:
+  selector:
+    app: ca-app
+  ports:
+    - name: "8078"
+      port: 8078
+      targetPort: 8078

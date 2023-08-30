@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filestorage-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fs-app
+  template:
+    metadata:
+      name: fs-pod
+      labels:
+        app: fs-app
+    spec:
+      containers:
+        - name: fs-image
+          image: quay.io/minio/minio
+#          ports:
+#          - containerPort: 9000
+            # - 9001
+          args: ["server", "--address", "0.0.0.0:9000", "--console-address", "0.0.0.0:9001", "/data"]
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: fs-secret
+                  key: username
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: fs-secret
+                  key: password
+          volumeMounts:
+            - name: fs-vol
+              mountPath: /data
+#          livenessProbe:
+ #           exec:
+  #            command:
+   #             - curl -f http://localhost:9000/minio/health/live
+    #       periodSeconds: 30
+     #       timeoutSeconds: 20
+     #       failureThreshold: 10
+
+      volumes:
+        - name: fs-vol
+          hostPath:
+            path: /home/minio/data
+
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: file-storage
+spec:
+  selector:
+    app: fs-app
+  ports:
+    - name: "9000"
+      port: 9000
+      targetPort: 9000
+    - name: "9001"
+      port: 9001
+      targetPort: 9001
+
+---
+apiVersion: v1
+kind: Secret 
+metadata:
+  name: fs-secret
+type: Opaque
+data:
+  username: "YWRtaW4="
+  password: "cGFzc3dvcmQ="
+  # MINIO_ROOT_USER: admin
+  # MINIO_ROOT_PASSWORD: "12345678"
